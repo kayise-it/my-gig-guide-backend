@@ -1,8 +1,7 @@
 module.exports = {
-  HOST: process.env.DB_HOST,
-  USER: process.env.DB_USER,
-  PASSWORD: process.env.DB_PASS,
-  DB: process.env.DB_NAME,
+  HOST: process.env.DB_HOST || "localhost",
+  USER: process.env.DB_USER || "mrt",
+  PASSWORD: process.env.DB_PASS || "Wh@tGu3ss@@2025",
+  DB: process.env.DB_NAME || "mygigguide",
   PORT: process.env.DB_PORT || 3306,
   dialect: "mysql",
-};
