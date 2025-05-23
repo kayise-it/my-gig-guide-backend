@@ -1,0 +1,11 @@
+//backend/routes/venue.routes.js
+const express = require("express");
+const router = express.Router();
+const venueController = require("../controllers/venue.controller");
+const { verifyToken } = require("../middleware/auth.middleware");
+
+
+router.get('/:id', verifyToken, venueController.getVenuebyId);
+router.post('/createVenue', verifyToken, venueController.createVenue);
+
+module.exports = router;
