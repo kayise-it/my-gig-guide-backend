@@ -1,8 +1,8 @@
-//File location: 
 module.exports = {
-    HOST: "localhost",
-    USER: "root",
-    PASSWORD: "root", // or your actual password
-    DB: "mygigguide",
-    dialect: "mysql",
-  };
+  HOST: process.env.DB_HOST || "localhost",
+  USER: process.env.DB_USER || "mrt",
+  PASSWORD: process.env.DB_PASS || "Wh@tGu3ss@@2025",
+  DB: process.env.DB_NAME || "mygigguide",
+  PORT: process.env.DB_PORT || 3306,
+  dialect: "mysql",
+}
