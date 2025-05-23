@@ -35,7 +35,6 @@ build/
 
 # OS & editor junk
 .DS_Store
-.env
 *.log
 
 # Optional for Vite/React
