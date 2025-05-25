@@ -95,14 +95,16 @@ router.put('/edit/:id', verifyToken, async (req, res) => {
     }
 });
 
-// Get single event by ID
+/**
+ * Get event by ID (duplicate of the route below, but without the typo in the error message)
+ */
 router.get('/:id', async (req, res) => {
     try {
         const event = await Event.findByPk(req.params.id);
         if (!event) {
             return res.status(404).json({
                 success: false,
-                message: "Event not 2323found"
+                message: "Event not found"
             });
         }
         res.status(200).json({
@@ -116,7 +118,6 @@ router.get('/:id', async (req, res) => {
         });
     }
 });
-
 // Get events for a specific organiser
 router.get('/organiser/:id', verifyToken, async (req, res) => {
     try {

@@ -1,4 +1,5 @@
 // File: backend/models/artist.model.js
+
 module.exports = (sequelize, DataTypes) => {
   const Artist = sequelize.define("artist", {
     userId: {
@@ -8,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id',
       },
       allowNull: false,
-      onDelete: 'CASCADE', // Optional: to delete artist when user is deleted
+      onDelete: 'CASCADE',
     },
     stage_name: { type: DataTypes.STRING, allowNull: false },
     real_name: DataTypes.STRING,
@@ -19,7 +20,12 @@ module.exports = (sequelize, DataTypes) => {
     facebook: DataTypes.STRING,
     twitter: DataTypes.STRING,
     profile_picture: DataTypes.STRING,
-    // Add new fields as needed
+
+    // Raw TEXT for storing JSON string
+    settings: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   });
 
   return Artist;

@@ -35,10 +35,7 @@ exports.getVenuebyId = async (req, res) => {
 exports.getArtistVenues = async (req, res) => {
   try {
     const venues = await venueService.getAllVenues();
-    if (venues.length === 0) {
-      return res.status(404).json({ message: 'No venue found' });
-    }
-    res.status(200).json(venues);
+    res.status(200).json(venues); // Even if it's empty
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch venues', error: err.message });
   }

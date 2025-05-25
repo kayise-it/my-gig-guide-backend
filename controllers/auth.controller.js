@@ -10,7 +10,8 @@ const Organiser = db.organiser;
 const Artist = db.artist;
 const AclTrust = db.acl_trust;
 const {
-  createFolderStructure
+  createFolderStructure,
+  slugify
 } = require("../utils/fileUtils");
 
 
@@ -30,9 +31,17 @@ exports.register = async (req, res) => {
     role = 'user',
     name,
     contact_email,
-    phone_number
+    phone_number,
+    settings
   } = req.body;
 
+  const randomFourDigits = Math.floor(1000 + Math.random() * 9000);
+  const folderName = `${role}_${slugify(name || username)}_${randomFourDigits}`;
+
+  console.log(role);
+
+  let artistSettings = null;
+  let organiserSettings = null;
   try {
     // Check for existing user
     const existingUser = await User.findOne({
@@ -94,15 +103,24 @@ exports.register = async (req, res) => {
 
       }
       if (role === '3') {
+        artistSettings = {
+          setting_name: name || username,
+          path: "../frontend/public/artists/",
+          folder_name: folderName
+        };
+        const artistSettingsSerialized = JSON.stringify(artistSettings);
         const artist = await Artist.create({
           stage_name: username, // Use provided name or fallback to username
           contact_email: contact_email || email,
           phone_number,
+          settings: artistSettingsSerialized,
           userId: user.id // Assuming you have this association
         }, {
           transaction: t
         });
-        await createFolderStructure(role, artist.id, username);
+
+        
+        await createFolderStructure(artistSettings);
       }
 
       return user;
@@ -136,6 +154,7 @@ exports.register = async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? err.message : null
     });
   }
+
 };
 
 exports.login = async (req, res) => {

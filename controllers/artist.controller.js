@@ -62,27 +62,24 @@ exports.artists = async (req, res) => {
 //get Artist by id
 exports.getArtistById = async (req, res) => {
   try {
-    const userId = req.params.id;
-    // Check if the artist exists using userId
+    console.log("Received request for artist_id:", req.params.artist_id);
+    const userId = req.params.artist_id;
+
+    console.log("Querying database with userId:", userId);
     const artist = await Artist.findOne({
-      where: {
-        userId: userId
-      }
+      where: { userId }
     });
+
     if (!artist) {
-      return res.status(404).json({
-        message: 'Artist not found'
-      });
+      console.log("Artist not found for userId:", userId);
+      return res.status(404).json({ message: 'Artist not found' });
     }
 
-    // Return the artist details
+    console.log("Found artist:", artist);
     res.status(200).json(artist);
   } catch (err) {
     console.error('Error fetching artist:', err);
-    res.status(500).json({
-      message: 'Failed to fetch artist',
-      error: err.message
-    });
+    res.status(500).json({ message: 'Failed to fetch artist', error: err.message });
   }
 };
 
@@ -110,9 +107,6 @@ exports.updateArtist = async (req, res) => {
         message: 'Artist not found'
       });
     }
-
-    console.log("Artist found:", artist);
-
     const oldStageName = artist.stage_name;
 
     // Update the artist details
@@ -136,7 +130,6 @@ exports.updateArtist = async (req, res) => {
 
     // Change the folder name only if the stage name is changed
     if (oldStageName !== stage_name) {
-      await changeFolderName("artist", artistId, oldStageName, stage_name);
     }
 
     res.status(200).json({
@@ -153,46 +146,5 @@ exports.updateArtist = async (req, res) => {
 // We have set up a directory structure for uploading profile pictures. The folder path is “uploads/artist/{id}_{name}”, where {id} is the artist’s unique ID, and {name} is the artist’s name. Uploaded images are stored in this directory.
 // The artist's profile picture is updated in the database with the new image path.
 exports.uploadProfilePicture = async (req, res) => {
-  try {
-    const artistId = req.params.id;
-    const artistName = req.body.artist_name;
-
-    // Check if the artist exists
-    const artist = await Artist.findByPk(artistId);
-    if (!artist) {
-      return res.status(404).json({
-        message: 'Artist not found'
-      });
-    }
-
-    // Check if a file was uploaded
-    if (!req.file) {
-      return res.status(400).json({
-        message: 'No file uploaded'
-      });
-    }
-
-    // Construct the new image path
-    const newImagePath = `uploads/artist/${artistId}_${artistName}/${req.file.filename}`;
-
-    // Update the artist's profile picture in the database
-    await Artist.update({
-      profile_picture: newImagePath
-    }, {
-      where: {
-        id: artistId
-      }
-    });
-
-    res.status(200).json({
-      message: 'Profile picture updated successfully',
-      imagePath: newImagePath
-    });
-  } catch (err) {
-    console.error('Error uploading profile picture:', err);
-    res.status(500).json({
-      message: 'Failed to upload profile picture',
-      error: err.message
-    });
-  }
+  console.log(req.body);
 };

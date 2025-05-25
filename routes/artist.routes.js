@@ -1,43 +1,111 @@
 //backend/routes/artist.routes.js
 const express = require("express");
 const router = express.Router();
+const db = require("../models");
 const artistController = require("../controllers/artist.controller");
-const {getAllEventsByArtist, getAllActiveEventsByArtist, updateEventVenue} = require("../controllers/event.controller");
-const {getArtistVenues} = require("../controllers/venue.controller");
-
 const {
-  verifyToken
+    getAllEventsByArtist,
+    getAllActiveEventsByArtist,
+    updateEventVenue
+} = require("../controllers/event.controller");
+const {
+    getArtistVenues
+} = require("../controllers/venue.controller");
+const Artist = db.artist;
+const {
+    verifyToken
 } = require("../middleware/auth.middleware");
-// Using multer for file uploads
 const multer = require('multer');
-const upload = multer({
-  dest: 'uploads/'
-});
-const Artist = require("../models").artist;
-
-
-
-
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
+// 1. Setup multer to use memory storage
+const upload = multer({
+    storage: multer.memoryStorage()
+});
+// 2. Your route with multer middleware
 router.put('/uploadprofilepicture/:id', upload.single('profile_picture'), async (req, res) => {
-  console.log("Request Body:", req.body);
-  console.log("Request File:", req.file);
+    const destinationPath = req.body.path + "/" + req.body.folder_name; // ../frontend/public/artists/3_simba_6288
 
-  if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
-  }
+    if (!req.file) {
+        return res.status(400).json({
+            message: 'No file uploaded'
+        });
+    }
 
-  res.status(200).json({ message: "File uploaded successfully" });
+    try {
+        // Ensure the destination folder exists
+        const resolvedPath = path.resolve(__dirname, '..', destinationPath);
+        if (!fs.existsSync(resolvedPath)) {
+            fs.mkdirSync(resolvedPath, {
+                recursive: true
+            });
+        }
+
+        const extension = path.extname(req.file.originalname).toLowerCase();
+
+        // Save the uploaded file manually
+        const safeName = (req.body.setting_name || 'artist').toLowerCase().replace(/\s+/g, '_');
+        const fileName = `${safeName}_profilepic${extension}`;
+        const fullPath = path.join(resolvedPath, fileName);
+
+        fs.writeFileSync(fullPath, req.file.buffer);
+
+        const relativePath = `/artists/${req.body.folder_name}/${fileName}`; // relative to /public
+
+        await Artist.update({
+            profile_picture: relativePath
+        }, {
+            where: {
+                id: req.params.id
+            }
+        });
+
+        res.status(200).json({
+            message: 'File uploaded successfully',
+            saved_as: fileName,
+            path: relativePath
+        });
+    } catch (error) {
+        console.error('File save error:', error);
+        res.status(500).json({
+            message: 'Failed to save file',
+            error: error.message
+        });
+    }
 });
 
-router.get("/:id", artistController.getArtistById);
-router.put("/edit/:id", artistController.updateArtist);
-router.put("/event/updateVenue/:id", updateEventVenue);
+/* Public Routes */
+router.get('/', artistController.artists);
+router.get('/:id', async (req, res) => {
+    try {
+        const artist = await Artist.findByPk(req.params.id);
+        console.log("ddsdsds: " + req.params.id);
+        if (!artist) {
+            return res.status(404).json({
+                success: false,
+                message: "Artist not 2323found"
+            });
+        }
+        res.status(200).json({
+            success: true,
+            artist: artist
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Error fetching artist data"
+        });
+    }
+});
+
+
+router.put("/edit/:id", verifyToken, artistController.updateArtist);
+router.put("/event/updateVenue/:id", verifyToken, updateEventVenue);
 //get the events created by artist id
 router.get("/events_by_artist/:id", verifyToken, getAllEventsByArtist);
 router.get("/events_active_by_artist/:id", verifyToken, getAllActiveEventsByArtist);
 router.get("/venues_by_artist/:id", verifyToken, getArtistVenues);
-router.get("/:id", artistController.getArtistById);
+
+
 module.exports = router;

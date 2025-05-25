@@ -28,3 +28,46 @@ exports.getAclTrust = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch ACL trusts', error: err.message });
   }
 };
+
+exports.getRoleIdName = async (req, res) => {
+  try {
+    // Fetch ACL trust by id and select only display_name
+    const aclTrust = await AclTrust.findOne({
+      where: {
+        id: req.body.role
+      },
+      attributes: ['display_name']
+    });
+
+    if (!aclTrust) {
+      return res.status(404).json({ message: 'Role not found' });
+    }
+
+    console.log("13134". aclTrust);
+    res.status(200).json(aclTrust);
+  } catch (err) {
+    console.error('Error fetching role display name:', err);
+    res.status(500).json({ message: 'Failed to fetch role display name', error: err.message });
+  }
+};
+
+exports.getRoleIdName = async (req, res) => {
+  try {
+    // Fetch ACL trusts by role and select only display_name
+    const aclTrusts = await AclTrust.findAll({
+      where: {
+        role: req.body.role
+      },
+      attributes: ['display_name']
+    });
+
+    if (aclTrusts.length === 0) {
+      return res.status(404).json({ message: 'No roles found' });
+    }
+
+    res.status(200).json(aclTrusts);
+  } catch (err) {
+    console.error('Error fetching role display names:', err);
+    res.status(500).json({ message: 'Failed to fetch role display names', error: err.message });
+  }
+};

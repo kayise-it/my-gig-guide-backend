@@ -5,5 +5,6 @@ const aclTructController = require("../controllers/acl_trust.controller");
 const { verifyToken } = require("../middleware/auth.middleware");
 
 router.get("/acl-trusts", aclTructController.getAclTrust);
+router.get("/acl-trusts/:id", verifyToken, aclTructController.getRoleIdName);
 
 module.exports = router;
