@@ -20,7 +20,7 @@ exports.events = async (req, res) => {
     // If found, return the list of events
     res.status(200).json(events);
   } catch (err) {
-    console.error('Error fetching events:', err);
+    console.error('Error fetchin323g events:', err);
     res.status(500).json({ message: 'Failed to fetch events', error: err.message });
   }
 };

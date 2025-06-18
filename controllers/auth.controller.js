@@ -9,10 +9,7 @@ const User = db.user;
 const Organiser = db.organiser;
 const Artist = db.artist;
 const AclTrust = db.acl_trust;
-const {
-  createFolderStructure,
-  slugify
-} = require("../utils/fileUtils");
+const {createFolderStructure,slugify} = require("../utils/fileUtils");
 
 
 exports.register = async (req, res) => {
@@ -87,19 +84,24 @@ exports.register = async (req, res) => {
 
       // If organiser, create organiser profile
       if (role === '4') {
-        const organiser = await Organiser.create({
+        organiserSettings = {
+          setting_name: name || username,
+          path: "../frontend/public/organiser/",
+          folder_name: folderName
+        };
+
+        const organiserSettingsSerialized = JSON.stringify(organiserSettings);
+        await Organiser.create({
           name: name || username, // Use provided name or fallback to username
           contact_email: contact_email || email,
           phone_number,
+          settings: organiserSettingsSerialized,
           userId: user.id // Assuming you have this association
         }, {
           transaction: t
         });
 
-        // Create the folder structure
-        const folderPath = await createFolderStructure(role, organiser.id, username);
-
-        console.log("Folder created at:", folderPath);
+        await createFolderStructure(organiserSettings);
 
       }
       if (role === '3') {
@@ -109,7 +111,7 @@ exports.register = async (req, res) => {
           folder_name: folderName
         };
         const artistSettingsSerialized = JSON.stringify(artistSettings);
-        const artist = await Artist.create({
+        await Artist.create({
           stage_name: username, // Use provided name or fallback to username
           contact_email: contact_email || email,
           phone_number,
@@ -118,8 +120,6 @@ exports.register = async (req, res) => {
         }, {
           transaction: t
         });
-
-        
         await createFolderStructure(artistSettings);
       }
 
@@ -159,42 +159,52 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const {
-      email,
-      password
-    } = req.body;
+    const { email, password } = req.body;
 
     const user = await User.findOne({
-      where: {
-        email
-      }
+      where: { email },
+      include: [{
+        model: AclTrust,
+        as: 'aclInfo',
+        attributes: ['acl_name', 'acl_display']
+      }]
     });
-    if (!user) return res.status(401).json({
-      message: "Invalid credentials"
-    });
+
+    if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({
-      message: "Invalid credentials"
-    });
+    if (!valid) return res.status(401).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({
-        id: user.id,
-        role: user.role
-      },
-      process.env.JWT_SECRET, {
-        expiresIn: "1d"
-      }
-    );
-
-    // Return user data (excluding password)
-    const userData = user.get();
+    const userData = user.get({ plain: true });
     delete userData.password;
+
+    // Add acl_display dynamically
+    userData.acl_display = user.aclInfo?.acl_display || 'Unknown Role';
+
+    // Add organiser_id or artist_id dynamically
+    if (user.role === 4) {
+      const organiser = await Organiser.findOne({ where: { userId: user.id } });
+      if (organiser) userData.organiser_id = organiser.id;
+    } else if (user.role === 3) {
+      const artist = await Artist.findOne({ where: { userId: user.id } });
+      if (artist) userData.artist_id = artist.id;
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+        ...(userData.organiser_id && { organiser_id: userData.organiser_id }),
+        ...(userData.artist_id && { artist_id: userData.artist_id })
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
 
     res.json({
       message: "Login successful",
       token,
-      user: userData // Include complete user data
+      user: userData
     });
 
   } catch (err) {

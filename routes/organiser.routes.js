@@ -1,62 +1,106 @@
 // routes/organiser.js
 const express = require('express');
 const router = express.Router();
-const {verifyToken } = require("../middleware/auth.middleware");
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const {
+  verifyToken
+} = require("../middleware/auth.middleware");
+
 const organiserController = require("../controllers/organiser.controller");
 const db = require('../models');
 
-// Get current organiser profile
-router.get('/me', verifyToken, async (req, res) => {
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+const upload = multer({ storage: multer.memoryStorage() });
+
+// In your backend (Node.js/Express example)
+router.post('/upload-gallery', upload.array('gallery', 10), async (req, res) => {
+  const { orgFolder } = req.body;
+
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'No files uploaded' });
+  }
+
+  if (!orgFolder) {
+    return res.status(400).json({ error: 'orgFolder is required' });
+  }
+
   try {
-    const organiser = await db.Organiser.findOne({ 
-      where: { userId: req.user.id },
-      include: [db.User]
-    });
-    
-    if (!organiser) {
-      return res.status(404).json({ message: 'Organiser profile not found' });
+    // Sanitize the folder name
+    const safeOrgFolder = orgFolder.replace(/\.\./g, '');
+
+    // Correct path to frontend public directory
+    const galleryPath = orgFolder;
+
+    // Create directory if needed
+    if (!fs.existsSync(galleryPath)) {
+      fs.mkdirSync(galleryPath, { recursive: true, mode: 0o755 });
     }
-    
-    res.json(organiser);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch organiser profile' });
+
+    // Process files
+    const filePaths = await Promise.all(
+      req.files.map(async (file) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`;
+        const filePath = path.join(galleryPath, uniqueName);
+        
+        await fs.promises.writeFile(filePath, file.buffer);
+        
+        return path.join('/organiser', safeOrgFolder, 'gallery', uniqueName)
+          .replace(/\\/g, '/');
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      paths: filePaths
+    });
+
+  } catch (error) {
+    console.error('Upload failed:', error);
+    res.status(500).json({ 
+      error: 'Upload failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+router.post('/upload-poster', upload.single('poster'), async (req, res) => {
+  const { orgFolder, setting_name = "poster" } = req.body;
+
+  if (!req.file || !orgFolder) {
+    return res.status(400).json({ error: 'Missing file or orgFolder' });
+  }
+
+  try {
+    const resolvedPath = path.resolve(__dirname, '..', orgFolder);
+    if (!fs.existsSync(resolvedPath)) {
+      fs.mkdirSync(resolvedPath, { recursive: true });
+    }
+
+    const extension = path.extname(req.file.originalname).toLowerCase();
+    const safeName = setting_name.toLowerCase().replace(/\s+/g, '_');
+    const fileName = `${safeName}_${Date.now()}${extension}`;
+    const fullPath = path.join(resolvedPath, fileName);
+
+    fs.writeFileSync(fullPath, req.file.buffer);
+
+    const relativePath = path.join('/organiser', path.basename(orgFolder), fileName);
+
+    res.status(200).json({
+      message: 'Poster uploaded',
+      path: relativePath,
+      fileName: fileName
+    });
+  } catch (error) {
+    console.error('Poster upload failed:', error);
+    res.status(500).json({ error: 'Failed to upload poster' });
   }
 });
 
-// Update organiser profile
-router.put('/me', verifyToken, upload.single('logo'), async (req, res) => {
-  try {
-    const updateData = {
-      name: req.body.name,
-      contact_email: req.body.contact_email,
-      phone_number: req.body.phone_number,
-      website: req.body.website
-    };
+//Get current organiser profile
+router.get('/:id', organiserController.userOrganisation);
 
-    if (req.file) {
-      updateData.logo = `/uploads/${req.file.filename}`;
-    }
-
-    const [updated] = await db.Organiser.update(updateData, {
-      where: { userId: req.user.id },
-      returning: true
-    });
-
-    if (!updated) {
-      return res.status(404).json({ message: 'Organiser profile not found' });
-    }
-
-    const organiser = await db.Organiser.findOne({ 
-      where: { userId: req.user.id },
-      include: [db.User]
-    });
-
-    res.json(organiser);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to update organiser profile' });
-  }
-});
+/* Get the organiser settings only */
+router.get('/:id/settings', organiserController.getOrganiserSettings);
 
 module.exports = router;

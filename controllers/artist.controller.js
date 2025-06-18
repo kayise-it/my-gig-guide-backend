@@ -148,3 +148,23 @@ exports.updateArtist = async (req, res) => {
 exports.uploadProfilePicture = async (req, res) => {
   console.log(req.body);
 };
+
+
+exports.userOrganisation = async (req, res) => {
+    try {
+        const artist = await Artist.findOne({
+            where: {
+                userId: req.params.id
+            }
+        });
+
+        if (!artist) {
+            return res.status(404).json({ message: 'artist not found' });
+        }
+
+        res.status(200).json(artist);
+    } catch (err) {
+        console.error('Error fetching artist:', err);
+        res.status(500).json({ message: 'Failed to fetch artist', error: err.message });
+    }
+}

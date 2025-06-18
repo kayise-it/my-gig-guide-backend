@@ -3,18 +3,10 @@ const express = require("express");
 const router = express.Router();
 const db = require("../models");
 const artistController = require("../controllers/artist.controller");
-const {
-    getAllEventsByArtist,
-    getAllActiveEventsByArtist,
-    updateEventVenue
-} = require("../controllers/event.controller");
-const {
-    getArtistVenues
-} = require("../controllers/venue.controller");
+const { getAllEventsByArtist, getAllActiveEventsByArtist, updateEventVenue } = require("../controllers/event.controller");
+const { getArtistVenues } = require("../controllers/venue.controller");
 const Artist = db.artist;
-const {
-    verifyToken
-} = require("../middleware/auth.middleware");
+const { verifyToken } = require("../middleware/auth.middleware");
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
@@ -77,27 +69,27 @@ router.put('/uploadprofilepicture/:id', upload.single('profile_picture'), async 
 
 /* Public Routes */
 router.get('/', artistController.artists);
-router.get('/:id', async (req, res) => {
+router.get('/:id', artistController.userOrganisation);
+
+router.get('/:artist_id', async (req, res) => {
     try {
-        const artist = await Artist.findByPk(req.params.id);
-        console.log("ddsdsds: " + req.params.id);
-        if (!artist) {
-            return res.status(404).json({
-                success: false,
-                message: "Artist not 2323found"
-            });
-        }
-        res.status(200).json({
-            success: true,
-            artist: artist
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message || "Error fetching artist data"
-        });
+    console.log("Received request for artist_id:", req.params.artist_id);
+    const userId = req.params.artist_id;
+
+    const artist = await Artist.findOne({
+      where: { userId }
+    });
+    if (!artist) {
+      console.log("Artist not found for userId:", userId);
+      return res.status(404).json({ message: 'Artist not found' });
+    }} catch (err) {
+        console.error('Error fetching artist:', err);
+        return res.status(500).json({ message: 'Failed to fetch artist', error: err.message });
     }
+    res.status(200).json(artist);
+   
 });
+
 
 
 router.put("/edit/:id", verifyToken, artistController.updateArtist);

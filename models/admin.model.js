@@ -7,7 +7,7 @@ module.exports = (sequelize, DataTypes) => {
       email: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
+        unique: false, // Changed to false to allow multiple admins with the same email
       },
       password: {
         type: DataTypes.STRING,

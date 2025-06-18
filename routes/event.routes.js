@@ -11,7 +11,6 @@ router.get("/", eventController.events);
 
 // Create new event
 router.post('/create_event', verifyToken, async (req, res) => {
-    console.log("QWeewqqweqwasqdcxsaqcaqsoicajscoiuasncoasnicasodiucn");
     try {
         // Validate request
         if (!req.body.name) {
@@ -33,16 +32,16 @@ router.post('/create_event', verifyToken, async (req, res) => {
         // Create event object
         const event = {
             userId: req.body.userId,
+            organiser_id: req.body.organiser_id,
             name: req.body.name,
             description: req.body.description || null,
             date: req.body.date,
             time: req.body.time,
             price: req.body.price ? parseFloat(req.body.price) : 0,
             ticket_url: req.body.ticket_url || null,
+            poster: req.body.poster || null,
         };
 
-
-        console.log("Event data:", event); // Log the event data for debugging
         const createdEvent = await Event.create(event);
 
         res.status(201).json({
@@ -94,7 +93,6 @@ router.put('/edit/:id', verifyToken, async (req, res) => {
         });
     }
 });
-
 /**
  * Get event by ID (duplicate of the route below, but without the typo in the error message)
  */
@@ -118,19 +116,21 @@ router.get('/:id', async (req, res) => {
         });
     }
 });
+router.delete('/delete/:id', verifyToken, eventController.deleteEvent);
 // Get events for a specific organiser
 router.get('/organiser/:id', verifyToken, async (req, res) => {
     try {
-        const organiserId = req.params.id; // Use the dynamic ID]
-        console.log("Fetching events for organiser ID:", organiserId); // Log the ID for debugging
+        const organiserId = parseInt(req.params.id, 10);
+        
+
         const events = await Event.findAll({
             where: {
-                organiser_id: organiserId
+                organiser_id: organiserId  // Corrected: match the actual column name
             }
         });
 
         if (!events.length) {
-            return res.status(404).json({
+            return res.status(200).json({
                 success: false,
                 message: "No events found for this organiser"
             });
@@ -141,6 +141,7 @@ router.get('/organiser/:id', verifyToken, async (req, res) => {
             events
         });
     } catch (error) {
+        console.error("Error fetching events:", error);
         res.status(500).json({
             success: false,
             message: error.message || "Error fetching events"

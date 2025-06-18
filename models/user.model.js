@@ -1,3 +1,4 @@
+//File: backend/models/user.model.js
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define("user", {
     username: {
@@ -24,6 +25,18 @@ module.exports = (sequelize, DataTypes) => {
       }
     }
   });
+
+
+  User.associate = (models) => {
+    User.belongsTo(models.acl_trust, {
+      foreignKey: 'role',
+      targetKey: 'acl_id',
+      as: 'aclInfo',
+      
+    });
+
+  };
+
 
   return User;
 };

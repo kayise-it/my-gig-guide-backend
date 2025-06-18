@@ -1,18 +1,19 @@
-// File: backend/models/index.js
 const dbConfig = require("../config/db.config.js");
 const { Sequelize, DataTypes } = require("sequelize");
+const bcrypt = require('bcrypt');
 
+// ✅ Initialize Sequelize
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
   dialect: dbConfig.dialect,
-  logging: false, // 👈 turn off SQL logs
+  logging: false, // Disable SQL logging
 });
 
 const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-// ✅ Load all models
+// ✅ Load models
 db.acl_trust = require("./acl_trust.model.js")(sequelize, DataTypes);
 db.user = require("./user.model.js")(sequelize, DataTypes);
 db.artist = require("./artist.model.js")(sequelize, DataTypes);
@@ -22,26 +23,41 @@ db.event = require("./event.model.js")(sequelize, DataTypes);
 db.event_artist = require("./event_artist.model.js")(sequelize, DataTypes);
 db.favorites = require("./favorite.model.js")(sequelize, DataTypes);
 
-// ✅ Setup associations
+// ✅ Define model relationships
+db.user.hasMany(db.venue, { foreignKey: 'userId' });
+db.venue.belongsTo(db.user, { foreignKey: 'userId' });
 
-// Event to Venue relationship remains the same
-db.event.belongsTo(db.venue, { foreignKey: 'venue_id' });
-db.venue.hasMany(db.event, { foreignKey: 'venue_id' });
+db.organiser.hasMany(db.venue, { foreignKey: 'organiser_id' });
+db.venue.belongsTo(db.organiser, { foreignKey: 'organiser_id' });
 
-// Many-to-many relationship between Event and Artist
-db.event.belongsToMany(db.artist, { through: db.event_artist });
-db.artist.belongsToMany(db.event, { through: db.event_artist });
+db.artist.hasMany(db.venue, { foreignKey: 'artist_id' });
+db.venue.belongsTo(db.artist, { foreignKey: 'artist_id' });
 
-module.exports = db;
+// (Optional) Enable future use of associate() per model
+Object.keys(db).forEach((modelName) => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
 
-const bcrypt = require('bcrypt');
-
-// ✅ Sync all tables and insert dummy data
+// ✅ Initial Setup: Insert roles and dummy data
 (async () => {
   try {
-    await sequelize.sync();
+    // ACL Trust roles
+    const aclCount = await db.acl_trust.count();
+    if (aclCount === 0) {
+      await db.acl_trust.bulkCreate([
+        { acl_name: "superuser", acl_display: "Superuser" },
+        { acl_name: "admin", acl_display: "Administrator" },
+        { acl_name: "artist", acl_display: "Artist" },
+        { acl_name: "organiser", acl_display: "Event Organiser" },
+        { acl_name: "venue", acl_display: "Venue Owner" },
+        { acl_name: "user", acl_display: "User" },
+      ]);
+      console.log("✅ ACL trust roles inserted successfully.");
+    }
 
-    // Create admin user if not exists
+    // Admin user
     const [admin, created] = await db.user.findOrCreate({
       where: { email: "thandov.hlophe@gmail.com" },
       defaults: {
@@ -57,7 +73,7 @@ const bcrypt = require('bcrypt');
       console.log("ℹ️ Admin user already exists");
     }
 
-    // Create dummy artist profile linked to admin
+    // Dummy artist profile
     const artistExists = await db.artist.findOne({ where: { userId: admin.id } });
 
     if (!artistExists) {
@@ -81,3 +97,5 @@ const bcrypt = require('bcrypt');
     console.error("❌ Error during initial setup:", error);
   }
 })();
+
+module.exports = db;

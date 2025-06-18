@@ -2,26 +2,25 @@
 module.exports = (sequelize, DataTypes) => {
   const Event = sequelize.define("event", {
     name: { type: DataTypes.STRING, allowNull: false },
-    userId: DataTypes.INTEGER,
+    userId: { type: DataTypes.INTEGER, allowNull: true },
+    organiser_id: { type: DataTypes.INTEGER, allowNull: true },
     description: DataTypes.TEXT,
     date: { type: DataTypes.DATE, allowNull: false },
     time: { type: DataTypes.TIME, allowNull: false },
     price: DataTypes.FLOAT,
     ticket_url: DataTypes.STRING,
-    poster: { type: DataTypes.STRING, allowNull: true }, // Poster image URL
-    gallery: { type: DataTypes.STRING, allowNull: true }, // Comma-separated gallery URLs
-    status: { type: DataTypes.STRING, allowNull: true, defaultValue: "scheduled" }, // Event status
-    category: { type: DataTypes.STRING, allowNull: true }, // Category for event
-    capacity: { type: DataTypes.INTEGER, allowNull: true }, // Event capacity
-    venue_id: { type: DataTypes.INTEGER, allowNull: true }, // Foreign key to Venue
+    poster: { type: DataTypes.STRING, allowNull: true },
+    gallery: { type: DataTypes.STRING, allowNull: true },
+    status: { type: DataTypes.STRING, allowNull: true, defaultValue: "scheduled" },
+    category: { type: DataTypes.STRING, allowNull: true },
+    capacity: { type: DataTypes.INTEGER, allowNull: true },
+    venue_id: { type: DataTypes.INTEGER, allowNull: true },
     createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     updatedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   });
 
-  // Relationships (Associations)
   Event.associate = (models) => {
-    // Event is created by a user (creator)
-    Event.belongsTo(models.User, {
+    Event.belongsTo(models.user, {
       foreignKey: {
         name: 'userId',
         allowNull: false,
@@ -30,11 +29,19 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: 'CASCADE',
     });
 
-    // Event belongs to a Venue
-    Event.belongsTo(models.Venue, {
+    Event.belongsTo(models.organiser, {
+      foreignKey: {
+        name: 'organiser_id',
+        allowNull: true,
+      },
+      as: 'organiser',
+      onDelete: 'SET NULL',
+    });
+
+    Event.belongsTo(models.venue, {
       foreignKey: {
         name: 'venue_id',
-        allowNull: true, // Allow NULL for flexibility
+        allowNull: true,
       },
       as: 'venue',
       onDelete: 'SET NULL',

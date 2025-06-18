@@ -19,26 +19,5 @@ module.exports = (sequelize, DataTypes) => {
     }
   });
 
-  // Insert default roles after defining and syncing the model
-  AclTrust.afterSync(async () => {
-    try {
-      // Check if the data already exists to avoid duplicates
-      const exists = await AclTrust.count();
-      if (exists === 0) {
-        await AclTrust.bulkCreate([
-          { acl_name: "superuser", acl_display: "Superuser" },
-          { acl_name: "admin", acl_display: "Administrator" },
-          { acl_name: "artist", acl_display: "Artist" },
-          { acl_name: "organiser", acl_display: "Event Organiser" },
-          { acl_name: "venue", acl_display: "Venue Owner" },
-          { acl_name: "user", acl_display: "User" },
-        ]);
-        console.log("ACL trust roles inserted successfully.");
-      }
-    } catch (err) {
-      console.error("Error inserting ACL trust roles:", err);
-    }
-  });
-
   return AclTrust;
 };
