@@ -1,8 +1,18 @@
-//File location: 
+// File: config/db.config.js
+
+require('dotenv').config();
+
 module.exports = {
-    HOST: "localhost",
-    USER: "root",
-    PASSWORD: "root", // or your actual password
-    DB: "my_gig_guide_db",
-    dialect: "mysql",
-  };
+  HOST: process.env.DB_HOST,
+  USER: process.env.DB_USER,
+  PASSWORD: process.env.DB_PASSWORD,
+  DB: process.env.DB_NAME,
+  dialect: "mysql",
+  port: process.env.PORT || 3306,
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
+};
