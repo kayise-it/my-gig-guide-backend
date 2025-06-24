@@ -1,8 +1,8 @@
 //File location: 
 module.exports = {
     HOST: "https://my-gig-guide-backend.onrender.com",
-    USER: "root",
-    PASSWORD: "root", // or your actual password
+    USER: "mrt",
+    PASSWORD: "Wh@tGu3ss@@2025", // or your actual password
     DB: "mygigguide",
     dialect: "mysql",
   };
