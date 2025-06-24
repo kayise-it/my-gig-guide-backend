@@ -27,8 +27,7 @@ router.post('/create_event', verifyToken, async (req, res) => {
             return res.status(400).json({
                 message: "Event time is required"
             });
-        }
-
+        }        
         // Create event object
         const event = {
             userId: req.body.userId,
@@ -40,6 +39,7 @@ router.post('/create_event', verifyToken, async (req, res) => {
             price: req.body.price ? parseFloat(req.body.price) : 0,
             ticket_url: req.body.ticket_url || null,
             poster: req.body.poster || null,
+            venue_id: req.body.venue_id || null,
         };
 
         const createdEvent = await Event.create(event);

@@ -90,3 +90,32 @@ exports.createVenue = async (req, res) => {
     });
   }
 };
+
+exports.deleteVenue = async (req, res) => {
+  const venueId = req.params.id;
+
+  try {
+    // Check if the venue exists
+    const venue = await Venue.findByPk(venueId);
+    if (!venue) {
+      return res.status(404).json({
+        success: false,
+        message: 'Venue not found',
+      });
+    }
+
+    // Delete the venue
+    await venue.destroy();
+
+    res.status(200).json({
+      success: true,
+      message: 'Venue deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting venue:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting venue',
+    });
+  }
+};
