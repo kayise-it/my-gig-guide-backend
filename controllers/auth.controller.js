@@ -9,16 +9,38 @@ const User = db.user;
 const Organiser = db.organiser;
 const Artist = db.artist;
 const AclTrust = db.acl_trust;
-const {createFolderStructure,slugify} = require("../utils/fileUtils");
-const fs = require('fs');
-const path = require('path');
+const {
+  createFolderStructure,
+  slugify
+} = require("../utils/fileUtils");
 
 
 exports.register = async (req, res) => {
 
-  const dirPath = path.join(__dirname, 'xxxxxx');
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
+  try {
+    const dirPath = path.join(__dirname, '..', 'uploads', 'users'); // Safer path
+    console.log('Creating folder at:', dirPath);
+
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, {
+        recursive: true
+      });
+      console.log('Folder created.');
+    } else {
+      console.log('Folder already exists.');
+    }
+
+    // Proceed with rest of logic...
+    res.status(200).json({
+      message: 'Success'
+    });
+
+  } catch (err) {
+    console.error('Error during folder creation:', err.message, err.stack);
+    res.status(500).json({
+      error: 'Failed to create folder',
+      detail: err.message
+    });
   }
 
   // Validate request
@@ -167,10 +189,15 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const {
+      email,
+      password
+    } = req.body;
 
     const user = await User.findOne({
-      where: { email },
+      where: {
+        email
+      },
       include: [{
         model: AclTrust,
         as: 'aclInfo',
@@ -178,35 +205,53 @@ exports.login = async (req, res) => {
       }]
     });
 
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+    if (!user) return res.status(401).json({
+      message: "Invalid credentials"
+    });
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ message: "Invalid credentials" });
+    if (!valid) return res.status(401).json({
+      message: "Invalid credentials"
+    });
 
-    const userData = user.get({ plain: true });
+    const userData = user.get({
+      plain: true
+    });
     delete userData.password;
 
     // Add acl_display dynamically
-    userData.acl_display = user.aclInfo?.acl_display || 'Unknown Role';
+    userData.acl_display = user.aclInfo ? .acl_display || 'Unknown Role';
 
     // Add organiser_id or artist_id dynamically
     if (user.role === 4) {
-      const organiser = await Organiser.findOne({ where: { userId: user.id } });
+      const organiser = await Organiser.findOne({
+        where: {
+          userId: user.id
+        }
+      });
       if (organiser) userData.organiser_id = organiser.id;
     } else if (user.role === 3) {
-      const artist = await Artist.findOne({ where: { userId: user.id } });
+      const artist = await Artist.findOne({
+        where: {
+          userId: user.id
+        }
+      });
       if (artist) userData.artist_id = artist.id;
     }
 
-    const token = jwt.sign(
-      {
+    const token = jwt.sign({
         id: user.id,
         role: user.role,
-        ...(userData.organiser_id && { organiser_id: userData.organiser_id }),
-        ...(userData.artist_id && { artist_id: userData.artist_id })
+        ...(userData.organiser_id && {
+          organiser_id: userData.organiser_id
+        }),
+        ...(userData.artist_id && {
+          artist_id: userData.artist_id
+        })
       },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      process.env.JWT_SECRET, {
+        expiresIn: '1d'
+      }
     );
 
     res.json({
