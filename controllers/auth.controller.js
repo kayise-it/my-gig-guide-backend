@@ -10,9 +10,17 @@ const Organiser = db.organiser;
 const Artist = db.artist;
 const AclTrust = db.acl_trust;
 const {createFolderStructure,slugify} = require("../utils/fileUtils");
+const fs = require('fs');
+const path = require('path');
 
 
 exports.register = async (req, res) => {
+
+  const dirPath = path.join(__dirname, 'xxxxxx');
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
   // Validate request
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
