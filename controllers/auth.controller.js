@@ -220,7 +220,7 @@ exports.login = async (req, res) => {
     delete userData.password;
 
     // Add acl_display dynamically
-    userData.acl_display = user.aclInfo ? .acl_display || 'Unknown Role';
+    userData.acl_display = user.aclInfo?.acl_display || 'Unknown Role';
 
     // Add organiser_id or artist_id dynamically
     if (user.role === 4) {
