@@ -105,7 +105,7 @@ exports.deleteEvent = async (req, res) => {
 // Function to get all events for a specific organiser
 exports.getAllEventsByOrganiser = async (req, res) => {
   try {
-    const userId = req.user.id; // Assuming you are using JWT and have user info in req.user
+    const userId = req.user.userId; // Assuming you are using JWT and have user info in req.user
 
     const events = await Event.findAll({
       where: { userId: userId },

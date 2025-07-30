@@ -27,16 +27,5 @@ module.exports = (sequelize, DataTypes) => {
   });
 
 
-  User.associate = (models) => {
-    User.belongsTo(models.acl_trust, {
-      foreignKey: 'role',
-      targetKey: 'acl_id',
-      as: 'aclInfo',
-      
-    });
-
-  };
-
-
   return User;
 };

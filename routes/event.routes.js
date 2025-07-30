@@ -148,6 +148,7 @@ router.get('/organiser/:id', verifyToken, async (req, res) => {
         });
     }
 });
+router.get("/getAllEventsByOrganiser/:id", verifyToken, eventController.getAllEventsByOrganiser);
 
 router.get("/by_organiser/:id", verifyToken, eventController.getAllEventsByOrganiser);
 

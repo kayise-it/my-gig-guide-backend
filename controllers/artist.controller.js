@@ -2,8 +2,12 @@
 const db = require("../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { validationResult } = require('express-validator');
-const { changeFolderName } = require("../utils/changeFolderName");
+const {
+  validationResult
+} = require('express-validator');
+const {
+  changeFolderName
+} = require("../utils/changeFolderName");
 const Artist = db.artist;
 
 //Access control list to delete the event ACL[1,2,3]
@@ -15,7 +19,7 @@ exports.deleteArtist = async (req, res) => {
     const artist = await Artist.findByPk(artistId);
     if (!artist) {
       return res.status(404).json({
-        message: 'Artist not found'
+        message: 'Artist not 134found'
       });
     }
 
@@ -58,7 +62,6 @@ exports.artists = async (req, res) => {
     });
   }
 };
-
 //get Artist by id
 exports.getArtistById = async (req, res) => {
   try {
@@ -67,80 +70,55 @@ exports.getArtistById = async (req, res) => {
 
     console.log("Querying database with userId:", userId);
     const artist = await Artist.findOne({
-      where: { userId }
+      where: {
+        userId
+      }
     });
 
     if (!artist) {
-      console.log("Artist not found for userId:", userId);
-      return res.status(404).json({ message: 'Artist not found' });
+      console.log("Artist not fr2ound for userId:", userId);
+      return res.status(404).json({
+        message: 'Artist notasd found'
+      });
     }
 
     console.log("Found artist:", artist);
     res.status(200).json(artist);
   } catch (err) {
     console.error('Error fetching artist:', err);
-    res.status(500).json({ message: 'Failed to fetch artist', error: err.message });
+    res.status(500).json({
+      message: 'Failed to fetch artist',
+      error: err.message
+    });
   }
 };
 
 // Update the artist
 exports.updateArtist = async (req, res) => {
-  console.log("Updating artist");
-
   try {
-    const artistId = req.params.id;
-    const {
-      stage_name,
-      real_name,
-      genre,
-      bio,
-      phone_number,
-      instagram,
-      facebook,
-      twitter
-    } = req.body;
+    // ✅ Get userId from auth middleware (req.user.id)
+    const userId = req.user?.id; 
 
-    // Check if the artist exists
-    const artist = await Artist.findByPk(artistId);
-    if (!artist) {
-      return res.status(404).json({
-        message: 'Artist not found'
-      });
-    }
-    const oldStageName = artist.stage_name;
-
-    // Update the artist details
-    await Artist.update(
-      {
-        stage_name,
-        real_name,
-        genre,
-        bio,
-        phone_number,
-        instagram,
-        facebook,
-        twitter
-      },
-      {
-        where: {
-          id: artistId
-        }
-      }
-    );
-
-    // Change the folder name only if the stage name is changed
-    if (oldStageName !== stage_name) {
+    // ❌ If no user is authenticated, throw an error
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized: No user ID found" });
     }
 
-    res.status(200).json({
-      message: 'Artist updated successfully'
+    // ✅ Update artist where userId matches
+    const [updated] = await Artist.update(req.body, {
+      where: { userId: userId }
     });
-  } catch (err) {
-    console.error('Error updating artist:', err);
-    res.status(500).json({
-      message: 'Failed to update artist',
-      error: err.message
-    });
+
+    if (!updated) {
+      return res.status(404).json({ error: "Artist not found" });
+    }
+
+    const updatedArtist = await Artist.findOne({ where: { userId } });
+    return res.json(updatedArtist);
+
+  } catch (error) {
+    console.error("Error updating artist:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 // We have set up a directory structure for uploading profile pictures. The folder path is “uploads/artist/{id}_{name}”, where {id} is the artist’s unique ID, and {name} is the artist’s name. Uploaded images are stored in this directory.
@@ -148,23 +126,27 @@ exports.updateArtist = async (req, res) => {
 exports.uploadProfilePicture = async (req, res) => {
   console.log(req.body);
 };
-
-
 exports.userOrganisation = async (req, res) => {
-    try {
-        const artist = await Artist.findOne({
-            where: {
-                userId: req.params.id
-            }
-        });
+  try {
+    const userId = req.params.id;
+    const artist = await Artist.findOne({
+      where: {
+        userId: userId
+      }
+    });
 
-        if (!artist) {
-            return res.status(404).json({ message: 'artist not found' });
-        }
-
-        res.status(200).json(artist);
-    } catch (err) {
-        console.error('Error fetching artist:', err);
-        res.status(500).json({ message: 'Failed to fetch artist', error: err.message });
+    if (!artist) {
+      return res.status(404).json({
+        message: 'artist not found'
+      });
     }
+
+    res.status(200).json(artist);
+  } catch (err) {
+    console.error('Error fetching artist:', err);
+    res.status(500).json({
+      message: 'Failed to fetch artist',
+      error: err.message
+    });
+  }
 }

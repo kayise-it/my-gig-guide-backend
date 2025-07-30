@@ -8,7 +8,7 @@ router.get("/admin", verifyToken, restrictTo("admin"), (req, res) => {
 });
 
 router.get("/artist", verifyToken, restrictTo("artist"), (req, res) => {
-  res.json({ message: "Welcome Artist Dashboard" });
+  res.json({ message: "Welcome Artist " });
 });
 
 router.get("/organiser", verifyToken, restrictTo("organiser"), (req, res) => {

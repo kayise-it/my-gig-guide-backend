@@ -1,4 +1,0 @@
-- There might be some venues that need a pin and its not really on the google maps. 
-- we must be able to use a pin to plot by move
-- When using the drag the pin, it must be able to live update the LAT & LONG and this then converts to an address
-- Add a venue should also in the route - /organiser/dashboard/event/:id

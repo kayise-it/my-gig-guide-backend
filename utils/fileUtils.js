@@ -6,10 +6,12 @@ const db = require("../models"); // Adjust this path to your models directory
 
 // Function to create folder structure
 const createFolderStructure = async (settings) => {
-  const folderPath = path.join(settings.path, settings.folder_name);
+  // Resolve absolute path from __dirname (current file location) + relative path from settings
+  const folderPath = path.resolve(__dirname, "..", settings.path, settings.folder_name);
 
   if (!fs.existsSync(folderPath)) {
     fs.mkdirSync(folderPath, { recursive: true });
+    console.log("Created folder:", folderPath);
   }
 };
 

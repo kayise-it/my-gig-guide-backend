@@ -4,8 +4,8 @@ module.exports = (sequelize, DataTypes) => {
     acl_id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
-      autoIncrement: true, // Ensure it increments automatically
-      allowNull: false,
+      autoIncrement: true, // ✅ if you're letting DB generate IDs
+      allowNull: false
     },
     acl_name: {
       type: DataTypes.STRING,

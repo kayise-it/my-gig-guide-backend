@@ -1,3 +1,4 @@
+//File location: backend/models/index.js
 const dbConfig = require("../config/db.config.js");
 const { Sequelize, DataTypes } = require("sequelize");
 const bcrypt = require('bcrypt');
@@ -23,6 +24,11 @@ db.event = require("./event.model.js")(sequelize, DataTypes);
 db.event_artist = require("./event_artist.model.js")(sequelize, DataTypes);
 db.favorites = require("./favorite.model.js")(sequelize, DataTypes);
 
+// Add missing association between acl_trust and user
+db.acl_trust.hasMany(db.user, { foreignKey: 'role', sourceKey: 'acl_id' });
+db.user.belongsTo(db.acl_trust, { foreignKey: 'role', targetKey: 'acl_id', as: 'aclInfo' });
+
+
 // ✅ Define model relationships
 db.user.hasMany(db.venue, { foreignKey: 'userId' });
 db.venue.belongsTo(db.user, { foreignKey: 'userId' });
@@ -44,31 +50,47 @@ Object.keys(db).forEach((modelName) => {
 (async () => {
   try {
     // ACL Trust roles
+   // STEP 1: Insert roles first
     const aclCount = await db.acl_trust.count();
     if (aclCount === 0) {
       await db.acl_trust.bulkCreate([
-        { acl_name: "superuser", acl_display: "Superuser" },
-        { acl_name: "admin", acl_display: "Administrator" },
-        { acl_name: "artist", acl_display: "Artist" },
-        { acl_name: "organiser", acl_display: "Event Organiser" },
-        { acl_name: "venue", acl_display: "Venue Owner" },
-        { acl_name: "user", acl_display: "User" },
+        { acl_id: 1, acl_name: "superuser", acl_display: "Superuser" },
+        { acl_id: 2, acl_name: "admin", acl_display: "Administrator" },
+        { acl_id: 3, acl_name: "artist", acl_display: "Artist" },
+        { acl_id: 4, acl_name: "organiser", acl_display: "Event Organiser" },
+        { acl_id: 5, acl_name: "venue", acl_display: "Venue Owner" },
+        { acl_id: 6, acl_name: "user", acl_display: "User" },
       ]);
-      console.log("✅ ACL trust roles inserted successfully.");
+      console.log("✅ ACL trust roles inserted");
     }
 
-    // Admin user
+    // STEP 2: THEN create user
     const [admin, created] = await db.user.findOrCreate({
       where: { email: "thandov.hlophe@gmail.com" },
       defaults: {
         username: "Thando",
         password: await bcrypt.hash("thandov.hlophe@gmail.com", 12),
-        role: 3,
+        role: 3, // ✅ Now role 3 actually exists
       },
     });
 
     if (created) {
       console.log("✅ Admin user created");
+      await db.artist.create({
+        userId: admin.id,
+        stage_name: 'Thando Vibes',
+        real_name: 'Thando Hlophe',
+        genre: 'Afro Soul',
+        bio: 'An emerging voice in Afro Soul from Mpumalanga.',
+        phone_number: '0721234567',
+        instagram: 'https://instagram.com/thandovibes',
+        facebook: 'https://facebook.com/thandovibes',
+        twitter: 'https://twitter.com/thandovibes',
+        profile_picture: '/images/artists/thando.jpg',
+      });
+
+      console.log("✅ Dummy artist added");
+
     } else {
       console.log("ℹ️ Admin user already exists");
     }
