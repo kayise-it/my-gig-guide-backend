@@ -2,7 +2,9 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config({ path: './backend/.env' });
+const dotenv = require('dotenv');
+dotenv.config({ path: './.env' });
+
 const db = require('./models');
 const authRoutes = require('./routes/auth.routes');
 const artistRoutes = require('./routes/artist.routes');
@@ -53,10 +55,18 @@ db.sequelize.authenticate()
   .then(() => console.log("✅ Connected to MySQL database"))
   .catch((err) => console.error("❌ DB connection error:", err));
 
-// Sync tables with the database
-db.sequelize.sync({ alter: false }).then(() => {
-  console.log("✅ Tables synced with database");
-});
+// Sync tables with the database then run initialization
+db.sequelize
+  .sync({ alter: false })
+  .then(async () => {
+    console.log("✅ Tables synced with database");
+    if (typeof db.initializeData === 'function') {
+      await db.initializeData();
+    }
+  })
+  .catch((err) => {
+    console.error("❌ Error syncing tables:", err);
+  });
 
 // Start the server
 const PORT = process.env.PORT || 3001;

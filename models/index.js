@@ -50,8 +50,8 @@ Object.keys(db).forEach((modelName) => {
   }
 });
 
-// ✅ Initial Setup: Insert roles and dummy data
-(async () => {
+// ✅ Initial Setup: Insert roles and dummy data AFTER sync
+db.initializeData = async () => {
   try {
     // ACL Trust roles
    // STEP 1: Insert roles first
@@ -122,6 +122,6 @@ Object.keys(db).forEach((modelName) => {
   } catch (error) {
     console.error("❌ Error during initial setup:", error);
   }
-})();
+};
 
 module.exports = db;
