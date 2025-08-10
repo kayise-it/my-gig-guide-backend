@@ -1,20 +1,24 @@
 // File: backend/controllers/acl_trust.controller.js
 const db = require("../models");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { validationResult } = require('express-validator');
 const AclTrust = db.acl_trust;
+const aclCache = require("../utils/aclCache");
 
 //Get the ACL trust for the front-end phasing registration, do not get admin or superuser
 exports.getAclTrust = async (req, res) => {
   try {
+    // Define restricted roles that should not be exposed publicly
+    const restrictedRoles = process.env.RESTRICTED_ROLES ? 
+      process.env.RESTRICTED_ROLES.split(',') : 
+      ["superuser", "admin"];
+    
     // Try to fetch all ACL trusts from the database
     const aclTrusts = await AclTrust.findAll({
       where: {
         acl_name: {
-          [db.Sequelize.Op.notIn]: ["superuser", "admin"]
+          [db.Sequelize.Op.notIn]: restrictedRoles
         }
-      }
+      },
+      attributes: ['acl_id', 'acl_name', 'acl_display'] // Only return necessary fields
     });
     
     if (aclTrusts.length === 0) {
@@ -31,7 +35,12 @@ exports.getAclTrust = async (req, res) => {
 
 exports.getRoleIdName = async (req, res) => {
   try {
-    const roleId = req.params.id;
+    const roleId = parseInt(req.params.id);
+    
+    // Validate roleId parameter
+    if (isNaN(roleId) || roleId <= 0) {
+      return res.status(400).json({ message: 'Invalid role ID provided' });
+    }
     
     // Fetch ACL trust by acl_id and select display name
     const aclTrust = await AclTrust.findOne({

@@ -1,11 +1,12 @@
-//backend/routes/acl.routes.js
+//backend/routes/acl_trust.routes.js
 const express = require("express");
 const router = express.Router();
-const aclTructController = require("../controllers/acl_trust.controller");
+const aclTrustController = require("../controllers/acl_trust.controller");
 const { verifyToken } = require("../middleware/auth.middleware");
+const { aclTrustLimiter, roleLookupLimiter } = require("../middleware/rateLimit.middleware");
 
-// Corrected route with leading slash
-router.get("/acl-trusts", aclTructController.getAclTrust);
-router.get("/acl-trusts/:id", verifyToken, aclTructController.getRoleIdName);
+// Public route for getting available roles (with rate limiting)
+router.get("/acl-trusts", aclTrustLimiter, aclTrustController.getAclTrust);
+router.get("/acl-trusts/:id", roleLookupLimiter, verifyToken, aclTrustController.getRoleIdName);
 
 module.exports = router;
