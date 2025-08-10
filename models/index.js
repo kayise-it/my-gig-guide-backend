@@ -53,8 +53,28 @@ Object.keys(db).forEach((modelName) => {
 // ✅ Initial Setup: Insert roles and dummy data AFTER sync
 db.initializeData = async () => {
   try {
-    // ACL Trust roles
-   // STEP 1: Insert roles first
+    // STEP 0: Check and add missing columns to artists table
+    try {
+      const columns = await db.sequelize.query(
+        "DESCRIBE artists",
+        { type: db.sequelize.QueryTypes.SELECT }
+      );
+      
+      const columnNames = columns.map(col => col.Field);
+      
+      if (!columnNames.includes('gallery')) {
+        console.log('🔧 Adding missing gallery column to artists table...');
+        await db.sequelize.query(
+          "ALTER TABLE artists ADD COLUMN gallery TEXT COMMENT 'JSON string containing array of gallery image paths'",
+          { type: db.sequelize.QueryTypes.RAW }
+        );
+        console.log('✅ gallery column added to artists table');
+      }
+    } catch (error) {
+      console.log('ℹ️ Could not check artists table structure:', error.message);
+    }
+
+    // STEP 1: Insert ACL Trust roles
     const aclCount = await db.acl_trust.count();
     if (aclCount === 0) {
       await db.acl_trust.bulkCreate([
