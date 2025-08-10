@@ -11,7 +11,36 @@ module.exports = (sequelize, DataTypes) => {
     updatedDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     userId: DataTypes.INTEGER,
     settings: DataTypes.TEXT
+  }, {
+    tableName: 'organisers' // Explicitly specify the table name
   });
+
+  Organiser.associate = (models) => {
+    Organiser.belongsTo(models.user, {
+      foreignKey: 'userId',
+      as: 'user'
+    });
+
+    // Organiser can have many venues
+    Organiser.hasMany(models.venue, {
+      foreignKey: 'owner_id',
+      constraints: false,
+      scope: {
+        owner_type: 'organiser'
+      },
+      as: 'venues'
+    });
+
+    // Organiser can have many events (as owner)
+    Organiser.hasMany(models.event, {
+      foreignKey: 'owner_id',
+      constraints: false,
+      scope: {
+        owner_type: 'organiser'
+      },
+      as: 'ownedEvents'
+    });
+  };
 
   return Organiser;
 };

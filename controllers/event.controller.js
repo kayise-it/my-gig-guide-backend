@@ -5,13 +5,33 @@ const jwt = require("jsonwebtoken");
 const { validationResult } = require('express-validator');
 const Event = db.event;
 const User = db.user;
+const Artist = db.artist;
+const Organiser = db.organiser;
 const { Op } = require("sequelize"); // Make sure this is imported at the top of your file
 
 
 exports.events = async (req, res) => {
   try {
-    // Try to fetch all events from the database
-    const events = await Event.findAll();
+    // Try to fetch all events from the database with owner information
+    const events = await Event.findAll({
+      include: [
+        {
+          model: User,
+          attributes: ["id", "username"],
+          as: 'creator'
+        },
+        {
+          model: Artist,
+          attributes: ["id", "stage_name", "real_name"],
+          as: 'artistOwner'
+        },
+        {
+          model: Organiser,
+          attributes: ["id", "name"],
+          as: 'organiserOwner'
+        }
+      ]
+    });
     
     if (events.length === 0) {
       return res.status(404).json({ message: 'No events found' });
@@ -20,7 +40,7 @@ exports.events = async (req, res) => {
     // If found, return the list of events
     res.status(200).json(events);
   } catch (err) {
-    console.error('Error fetchin323g events:', err);
+    console.error('Error fetching events:', err);
     res.status(500).json({ message: 'Failed to fetch events', error: err.message });
   }
 };
@@ -44,8 +64,26 @@ exports.createEvent = async (req, res) => {
 };
 exports.getEventById = async (req, res) => {
   try {
-    // Find event by ID
-    const event = await Event.findByPk(req.params.id);
+    // Find event by ID with owner information
+    const event = await Event.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          attributes: ["id", "username"],
+          as: 'creator'
+        },
+        {
+          model: Artist,
+          attributes: ["id", "stage_name", "real_name"],
+          as: 'artistOwner'
+        },
+        {
+          model: Organiser,
+          attributes: ["id", "name"],
+          as: 'organiserOwner'
+        }
+      ]
+    });
     
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
@@ -107,13 +145,31 @@ exports.getAllEventsByOrganiser = async (req, res) => {
   try {
     const userId = req.user.userId; // Assuming you are using JWT and have user info in req.user
 
+    // First get the organiser ID for this user
+    const organiser = await Organiser.findOne({
+      where: { userId: userId }
+    });
+
+    if (!organiser) {
+      return res.status(404).json({ message: 'Organiser not found for this user' });
+    }
+
     const events = await Event.findAll({
-      where: { userId: userId },
+      where: { 
+        owner_id: organiser.id,
+        owner_type: 'organiser'
+      },
       include: [
         {
           model: User,
-          attributes: ["id", "username"], // Only include necessary fields
+          attributes: ["id", "username"],
+          as: 'creator'
         },
+        {
+          model: Organiser,
+          attributes: ["id", "name"],
+          as: 'organiserOwner'
+        }
       ],
     });
     res.status(200).json(events);
@@ -127,13 +183,36 @@ exports.getAllEventsByArtist = async (req, res) => {
     try {
     const userId = req.user.id; // Assuming you are using JWT and have user info in req.user
 
+    // First get the artist ID for this user
+    const artist = await Artist.findOne({
+      where: { userId: userId }
+    });
+
+    if (!artist) {
+      return res.status(404).json({ message: 'Artist not found for this user' });
+    }
+
     const events = await Event.findAll({
-      where: { userId: userId },
-      
+      where: { 
+        owner_id: artist.id,
+        owner_type: 'artist'
+      },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "username"],
+          as: 'creator'
+        },
+        {
+          model: Artist,
+          attributes: ["id", "stage_name", "real_name"],
+          as: 'artistOwner'
+        }
+      ],
     });
     res.status(200).json(events);
   } catch (error) {
-    console.error("Error fetching organiser events:", error);
+    console.error("Error fetching artist events:", error);
     res.status(500).json({ message: "Failed to fetch events" });
   }
 };
@@ -142,13 +221,35 @@ exports.getAllActiveEventsByArtist = async (req, res) => {
   try {
     const userId = req.user.id; // Assuming JWT middleware adds user info to req.user
 
+    // First get the artist ID for this user
+    const artist = await Artist.findOne({
+      where: { userId: userId }
+    });
+
+    if (!artist) {
+      return res.status(404).json({ message: 'Artist not found for this user' });
+    }
+
     const events = await Event.findAll({
       where: {
-        userId: userId,
+        owner_id: artist.id,
+        owner_type: 'artist',
         date: {
           [Op.gt]: new Date(), // Only get events with a future date
         },
       },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "username"],
+          as: 'creator'
+        },
+        {
+          model: Artist,
+          attributes: ["id", "stage_name", "real_name"],
+          as: 'artistOwner'
+        }
+      ],
     });
 
     res.status(200).json(events);

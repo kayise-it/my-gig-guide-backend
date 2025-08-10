@@ -28,16 +28,20 @@ db.favorites = require("./favorite.model.js")(sequelize, DataTypes);
 db.acl_trust.hasMany(db.user, { foreignKey: 'role', sourceKey: 'acl_id' });
 db.user.belongsTo(db.acl_trust, { foreignKey: 'role', targetKey: 'acl_id', as: 'aclInfo' });
 
+// Event-Artist many-to-many relationship
+db.event.belongsToMany(db.artist, { 
+  through: db.event_artist, 
+  foreignKey: 'event_id',
+  otherKey: 'artist_id',
+  as: 'artists'
+});
 
-// ✅ Define model relationships
-db.user.hasMany(db.venue, { foreignKey: 'userId' });
-db.venue.belongsTo(db.user, { foreignKey: 'userId' });
-
-db.organiser.hasMany(db.venue, { foreignKey: 'organiser_id' });
-db.venue.belongsTo(db.organiser, { foreignKey: 'organiser_id' });
-
-db.artist.hasMany(db.venue, { foreignKey: 'artist_id' });
-db.venue.belongsTo(db.artist, { foreignKey: 'artist_id' });
+db.artist.belongsToMany(db.event, { 
+  through: db.event_artist, 
+  foreignKey: 'artist_id',
+  otherKey: 'event_id',
+  as: 'events'
+});
 
 // (Optional) Enable future use of associate() per model
 Object.keys(db).forEach((modelName) => {

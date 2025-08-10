@@ -11,7 +11,7 @@ exports.verifyToken = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_here_make_it_long_and_random_123456789');
     req.user = decoded; // Store decoded payload (e.g., { id, role }) in request
     next();
   } catch (err) {

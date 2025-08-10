@@ -26,7 +26,43 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    
+    // Gallery field to store array of image paths as JSON string
+    gallery: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'JSON string containing array of gallery image paths'
+    },
+  }, {
+    tableName: 'artists' // Explicitly specify the table name
   });
+
+  Artist.associate = (models) => {
+    Artist.belongsTo(models.user, {
+      foreignKey: 'userId',
+      as: 'user'
+    });
+
+    // Artist can have many venues
+    Artist.hasMany(models.venue, {
+      foreignKey: 'owner_id',
+      constraints: false,
+      scope: {
+        owner_type: 'artist'
+      },
+      as: 'venues'
+    });
+
+    // Artist can have many events (as owner)
+    Artist.hasMany(models.event, {
+      foreignKey: 'owner_id',
+      constraints: false,
+      scope: {
+        owner_type: 'artist'
+      },
+      as: 'ownedEvents'
+    });
+  };
 
   return Artist;
 };

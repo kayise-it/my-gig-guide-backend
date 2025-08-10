@@ -3,14 +3,22 @@ module.exports = (sequelize, DataTypes) => {
   const Event = sequelize.define("event", {
     name: { type: DataTypes.STRING, allowNull: false },
     userId: { type: DataTypes.INTEGER, allowNull: true },
-    organiser_id: { type: DataTypes.INTEGER, allowNull: true },
+    owner_id: { type: DataTypes.INTEGER, allowNull: false },
+    owner_type: { 
+      type: DataTypes.ENUM('artist', 'organiser'), 
+      allowNull: false,
+      validate: {
+        isIn: [['artist', 'organiser']]
+      }
+    },
     description: DataTypes.TEXT,
     date: { type: DataTypes.DATE, allowNull: false },
     time: { type: DataTypes.TIME, allowNull: false },
     price: DataTypes.FLOAT,
     ticket_url: DataTypes.STRING,
     poster: { type: DataTypes.STRING, allowNull: true },
-    gallery: { type: DataTypes.STRING, allowNull: true },
+    // Use TEXT to allow multiple image paths (comma-separated or JSON)
+    gallery: { type: DataTypes.TEXT, allowNull: true },
     status: { type: DataTypes.STRING, allowNull: true, defaultValue: "scheduled" },
     category: { type: DataTypes.STRING, allowNull: true },
     capacity: { type: DataTypes.INTEGER, allowNull: true },
@@ -29,13 +37,17 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: 'CASCADE',
     });
 
+    // Conditional associations without automatic foreign key constraints
+    Event.belongsTo(models.artist, {
+      foreignKey: 'owner_id',
+      as: 'artistOwner',
+      constraints: false // Disable automatic foreign key constraint
+    });
+
     Event.belongsTo(models.organiser, {
-      foreignKey: {
-        name: 'organiser_id',
-        allowNull: true,
-      },
-      as: 'organiser',
-      onDelete: 'SET NULL',
+      foreignKey: 'owner_id',
+      as: 'organiserOwner',
+      constraints: false // Disable automatic foreign key constraint
     });
 
     Event.belongsTo(models.venue, {
