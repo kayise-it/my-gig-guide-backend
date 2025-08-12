@@ -78,7 +78,7 @@ exports.register = async (req, res) => {
             
             const settings = {
                 setting_name: name || username,
-                path: "frontend/public/artists/",
+                path: "../frontend/public/artists/",
                 folder_name: folderName
             };
 
@@ -107,7 +107,7 @@ exports.register = async (req, res) => {
             
             const settings = {
                 setting_name: name || username,
-                path: "frontend/public/organiser/",
+                path: "../frontend/public/organiser/",
                 folder_name: folderName
             };
 

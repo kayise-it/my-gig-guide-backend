@@ -22,7 +22,14 @@ db.organiser = require("./organiser.model.js")(sequelize, DataTypes);
 db.venue = require("./venue.model.js")(sequelize, DataTypes);
 db.event = require("./event.model.js")(sequelize, DataTypes);
 db.event_artist = require("./event_artist.model.js")(sequelize, DataTypes);
-db.favorites = require("./favorite.model.js")(sequelize, DataTypes);
+// Favorite models (separate tables for better performance and integrity)
+db.user_artist_favorite = require("./user_artist_favorite.model.js")(sequelize, DataTypes);
+db.user_event_favorite = require("./user_event_favorite.model.js")(sequelize, DataTypes);
+db.user_venue_favorite = require("./user_venue_favorite.model.js")(sequelize, DataTypes);
+db.user_organiser_favorite = require("./user_organiser_favorite.model.js")(sequelize, DataTypes);
+
+// Rating model (polymorphic for flexibility)
+db.rating = require("./rating.model.js")(sequelize, DataTypes);
 
 // Add missing association between acl_trust and user
 db.acl_trust.hasMany(db.user, { foreignKey: 'role', sourceKey: 'acl_id' });

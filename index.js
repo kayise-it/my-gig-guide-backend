@@ -12,6 +12,7 @@ const eventRoutes = require('./routes/event.routes.js');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const organiserRoutes = require('./routes/organiser.routes');
 const venueRoutes = require('./routes/venue.routes');
+const favoriteRoutes = require('./routes/favorites.routes');
 const aclRoutes = require('./routes/acl_trust.routes.js');
 
 const app = express();
@@ -54,6 +55,7 @@ app.use('/api/artists', artistRoutes);     // Artist routes
 app.use('/api/events', eventRoutes);     // Events routes
 app.use('/api/organisers', organiserRoutes);     // Events routes
 app.use('/api/venue', venueRoutes);     // Events routes
+app.use('/api/favorites', favoriteRoutes);     // Favorite routes
 app.use('/api/notifications', require('./routes/notification.routes')); // Notification routes
 app.use('/api/', aclRoutes);          // ACL routes
 
@@ -76,7 +78,7 @@ db.sequelize
   });
 
 // Start the server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001 || 8000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   console.log(`Server is also accessible on http://0.0.0.0:${PORT}`);

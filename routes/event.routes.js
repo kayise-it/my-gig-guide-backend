@@ -339,6 +339,11 @@ router.get('/:id', async (req, res) => {
                     model: Organiser,
                     attributes: ["id", "name"],
                     as: 'organiserOwner'
+                },
+                {
+                    model: db.venue,
+                    attributes: ["id", "name", "address", "latitude", "longitude"],
+                    as: 'venue'
                 }
             ]
         });

@@ -136,6 +136,9 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
+// Public route for viewing venue details (no authentication required)
+router.get('/public/:id', venueController.getVenuebyId);
+// Private route for authenticated users
 router.get('/:id', verifyToken, venueController.getVenuebyId);
 router.get('/getOrganisersVenues/:id', verifyToken, venueController.getOrganisersVenues);
 router.get('/getArtistVenues/:id', verifyToken, venueController.getArtistVenues);

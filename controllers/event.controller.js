@@ -29,19 +29,21 @@ exports.events = async (req, res) => {
           model: Organiser,
           attributes: ["id", "name"],
           as: 'organiserOwner'
+        },
+        {
+          model: db.venue,
+          attributes: ["id", "name", "address", "latitude", "longitude"],
+          as: 'venue'
         }
       ]
     });
     
-    if (events.length === 0) {
-      return res.status(404).json({ message: 'No events found' });
-    }
-
-    // If found, return the list of events
+    // Return the list of events (empty array if no events found)
     res.status(200).json(events);
   } catch (err) {
     console.error('Error fetching events:', err);
-    res.status(500).json({ message: 'Failed to fetch events', error: err.message });
+    // Return empty array instead of error to prevent frontend from breaking
+    res.status(200).json([]);
   }
 };
 exports.createEvent = async (req, res) => {
