@@ -63,7 +63,75 @@ exports.register = async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Create user
+        // Create folder structure FIRST before creating user
+        let settings = null;
+        let folderPath = null;
+
+        if (role == 3) { // Artist
+            // Generate folder name for artist
+            const folderName = `${role}_${slugify(username)}_${Math.floor(Math.random() * 9000 + 1000)}`;
+            
+            settings = {
+                setting_name: name || username,
+                path: "frontend/public/artists/",
+                folder_name: folderName
+            };
+
+            console.log("🎨 Creating artist folder with settings:", settings);
+
+            // Create folder structure FIRST before user creation
+            try {
+                folderPath = await createFolderStructure(settings);
+                console.log("✅ Artist folder structure created successfully at:", folderPath);
+                
+                // Verify the folder actually exists
+                const fs = require('fs');
+                if (!fs.existsSync(folderPath)) {
+                    throw new Error(`Folder was not created at: ${folderPath}`);
+                }
+                
+            } catch (folderError) {
+                console.error("❌ Failed to create artist folder structure:", folderError);
+                return res.status(500).json({
+                    message: "Registration failed: Could not create artist folder structure",
+                    error: folderError.message,
+                    settings: settings
+                });
+            }
+        } else if (role == 4) { // Organiser
+            // Generate folder name for organiser
+            const folderName = `${role}_${slugify(name || username)}_${Math.floor(Math.random() * 9000 + 1000)}`;
+            
+            settings = {
+                setting_name: name || username,
+                path: "frontend/public/organiser/",
+                folder_name: folderName
+            };
+
+            console.log("🏢 Creating organiser folder with settings:", settings);
+
+            // Create folder structure FIRST before user creation
+            try {
+                folderPath = await createFolderStructure(settings);
+                console.log("✅ Organiser folder structure created successfully at:", folderPath);
+                
+                // Verify the folder actually exists
+                const fs = require('fs');
+                if (!fs.existsSync(folderPath)) {
+                    throw new Error(`Folder was not created at: ${folderPath}`);
+                }
+                
+            } catch (folderError) {
+                console.error("❌ Failed to create organiser folder structure:", folderError);
+                return res.status(500).json({
+                    message: "Registration failed: Could not create organiser folder structure",
+                    error: folderError.message,
+                    settings: settings
+                });
+            }
+        }
+
+        // Only create user if folder creation succeeded (or if no folder needed for regular users)
         const user = await User.create({
             username,
             email,
@@ -73,15 +141,7 @@ exports.register = async (req, res) => {
 
         // Create role-specific profile with settings
         if (role == 3) { // Artist
-            // Generate folder name for artist
-            const folderName = `${role}_${slugify(username)}_${Math.floor(Math.random() * 9000 + 1000)}`;
-            
-            const settings = {
-                setting_name: name || username,
-                path: "../frontend/public/artists/",
-                folder_name: folderName
-            };
-
+            // Create artist profile in database
             await Artist.create({
                 userId: user.id,
                 stage_name: username,
@@ -90,27 +150,8 @@ exports.register = async (req, res) => {
                 settings: JSON.stringify(settings)
             });
 
-            // Create folder structure for artist
-            await createFolderStructure(settings);
-            
-            // Create artist subfolders (events, venues, profile, gallery)
-            const artistSubfolders = ['events', 'venues', 'profile', 'gallery'];
-            for (const subfolder of artistSubfolders) {
-                await createFolderStructure({
-                    path: `${settings.path}${folderName}`,
-                    folder_name: subfolder
-                });
-            }
+            console.log("✅ Artist profile created in database");
         } else if (role == 4) { // Organiser
-            // Generate folder name for organiser
-            const folderName = `${role}_${slugify(name || username)}_${Math.floor(Math.random() * 9000 + 1000)}`;
-            
-            const settings = {
-                setting_name: name || username,
-                path: "../frontend/public/organiser/",
-                folder_name: folderName
-            };
-
             await Organiser.create({
                 userId: user.id,
                 name: name || username,
@@ -119,17 +160,7 @@ exports.register = async (req, res) => {
                 settings: JSON.stringify(settings)
             });
 
-            // Create folder structure for organiser
-            await createFolderStructure(settings);
-            
-            // Create organiser subfolders (events, venues, profile)
-            const organiserSubfolders = ['events', 'venues', 'profile'];
-            for (const subfolder of organiserSubfolders) {
-                await createFolderStructure({
-                    path: `${settings.path}${folderName}`,
-                    folder_name: subfolder
-                });
-            }
+            console.log("✅ Organiser profile created in database");
         }
 
         const result = user;
